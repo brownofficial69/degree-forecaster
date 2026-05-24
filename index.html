@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Academic Forecaster v0.9</title>
+    <title>Universal Academic Forecaster v0.10</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -327,7 +327,7 @@
     </div>
 
     <div class="mt-8 text-center text-[#d4a373] font-bold uppercase tracking-widest text-lg z-10 relative">
-        v0.9 | Made by shad
+        v0.10 | Made by shad
     </div>
 
     <script>
@@ -571,7 +571,9 @@
 
         // --- PIXEL CAT FACTORY ---
         // Each cat is a tile-aligned SVG (24x24 viewBox) using crispEdges.
-        // The cat changes per degree mode; rainy cat is shown when the student is failing (no degree achieved).
+        // The cat is picked by COURSE SUBJECT (cyber, code, medicine, law, engineering, business, design, psychology).
+        // Fallback: degree-level cat (BSc grad / MSc scholar / PhD doctor) when no subject keyword matches.
+        // Fail band: rainy cat regardless of subject.
 
         function catBSc() {
             // Graduate cat: pastel yellow body, black mortarboard, gold tassel
@@ -821,17 +823,486 @@
             </svg>`;
         }
 
+        // --- SUBJECT CATS (picked by course keywords) ---
+
+        function catHacker() {
+            // Cyber Security / Ethical Hacking — hooded cat, glowing laptop
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Hood outer -->
+                <rect x="6" y="3" width="12" height="2" fill="#9d8cdf"/>
+                <rect x="5" y="5" width="14" height="2" fill="#9d8cdf"/>
+                <rect x="4" y="7" width="2" height="6" fill="#9d8cdf"/>
+                <rect x="18" y="7" width="2" height="6" fill="#9d8cdf"/>
+                <!-- Hood inner shadow -->
+                <rect x="6" y="7" width="12" height="2" fill="#7a6bbe"/>
+                <!-- Face -->
+                <rect x="7" y="9" width="10" height="5" fill="#3a3340"/>
+                <!-- Glowing eyes -->
+                <rect x="9" y="10" width="2" height="2" fill="#b5e48c" class="screen-glow"/>
+                <rect x="13" y="10" width="2" height="2" fill="#b5e48c" class="screen-glow"/>
+                <rect x="10" y="11" width="1" height="1" fill="#fffcf2"/>
+                <rect x="14" y="11" width="1" height="1" fill="#fffcf2"/>
+                <!-- Smirk -->
+                <rect x="10" y="13" width="3" height="1" fill="#ffb5a7"/>
+                <!-- Body -->
+                <rect x="7" y="14" width="10" height="3" fill="#5a4a42"/>
+                <!-- Laptop base -->
+                <rect x="4" y="17" width="16" height="1" fill="#3a3340"/>
+                <rect x="3" y="18" width="18" height="1" fill="#5a4a42"/>
+                <!-- Laptop screen -->
+                <rect x="5" y="19" width="14" height="4" fill="#1a1a1a"/>
+                <!-- Glowing code -->
+                <rect x="6" y="20" width="3" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="10" y="20" width="2" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="13" y="20" width="4" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="6" y="21" width="2" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="9" y="21" width="4" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="14" y="21" width="3" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="6" y="22" width="5" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="12" y="22" width="2" height="1" fill="#b5e48c" class="screen-glow"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="17" y="15" width="1" height="2" fill="#5a4a42"/>
+                    <rect x="18" y="14" width="1" height="2" fill="#5a4a42"/>
+                    <rect x="19" y="13" width="1" height="2" fill="#5a4a42"/>
+                </g>
+            </svg>`;
+        }
+
+        function catCoder() {
+            // Computer Science / Data Science — green cat with laptop full of code
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="5" width="2" height="2" fill="#b5e48c"/></g>
+                <g class="cat-ear" style="animation-delay:1.1s"><rect x="14" y="5" width="2" height="2" fill="#b5e48c"/></g>
+                <rect x="7" y="6" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="6" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="6" width="10" height="6" fill="#b5e48c"/>
+                <rect x="5" y="7" width="1" height="4" fill="#b5e48c"/>
+                <rect x="16" y="7" width="1" height="4" fill="#b5e48c"/>
+                <!-- Round glasses -->
+                <rect x="7" y="8" width="3" height="3" fill="#5a4a42"/>
+                <rect x="8" y="9" width="1" height="1" fill="#fffcf2"/>
+                <rect x="12" y="8" width="3" height="3" fill="#5a4a42"/>
+                <rect x="13" y="9" width="1" height="1" fill="#fffcf2"/>
+                <rect x="10" y="9" width="2" height="1" fill="#5a4a42"/>
+                <!-- Nose + smile -->
+                <rect x="11" y="10" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="11" width="3" height="1" fill="#5a4a42"/>
+                <!-- Body -->
+                <rect x="7" y="12" width="8" height="4" fill="#b5e48c"/>
+                <rect x="6" y="13" width="1" height="2" fill="#b5e48c"/>
+                <rect x="15" y="13" width="1" height="2" fill="#b5e48c"/>
+                <!-- Laptop hinge -->
+                <rect x="3" y="16" width="18" height="1" fill="#5a4a42"/>
+                <!-- Screen -->
+                <rect x="4" y="17" width="16" height="6" fill="#1a1a1a"/>
+                <rect x="4" y="17" width="16" height="1" fill="#3a3340"/>
+                <!-- Code lines -->
+                <rect x="5" y="18" width="2" height="1" fill="#a2d2ff" class="screen-glow"/>
+                <rect x="8" y="18" width="4" height="1" fill="#ffcbf2" class="screen-glow"/>
+                <rect x="13" y="18" width="2" height="1" fill="#fcf6bd" class="screen-glow"/>
+                <rect x="16" y="18" width="3" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="6" y="19" width="3" height="1" fill="#fcf6bd" class="screen-glow"/>
+                <rect x="10" y="19" width="5" height="1" fill="#a2d2ff" class="screen-glow"/>
+                <rect x="16" y="19" width="2" height="1" fill="#ffcbf2" class="screen-glow"/>
+                <rect x="5" y="20" width="4" height="1" fill="#ffcbf2" class="screen-glow"/>
+                <rect x="10" y="20" width="2" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="13" y="20" width="5" height="1" fill="#a2d2ff" class="screen-glow"/>
+                <rect x="6" y="21" width="2" height="1" fill="#fcf6bd" class="screen-glow"/>
+                <rect x="9" y="21" width="4" height="1" fill="#ffcbf2" class="screen-glow"/>
+                <rect x="14" y="21" width="4" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="5" y="22" width="6" height="1" fill="#a2d2ff" class="screen-glow"/>
+                <rect x="12" y="22" width="3" height="1" fill="#fcf6bd" class="screen-glow"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="14" width="1" height="2" fill="#b5e48c"/>
+                    <rect x="17" y="13" width="1" height="2" fill="#b5e48c"/>
+                    <rect x="18" y="12" width="1" height="2" fill="#b5e48c"/>
+                </g>
+            </svg>`;
+        }
+
+        function catMedic() {
+            // Medicine / Nursing / Health — white coat, stethoscope, red cross hat
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Nurse cap -->
+                <rect x="6" y="3" width="12" height="2" fill="#fffcf2"/>
+                <rect x="7" y="2" width="10" height="1" fill="#fffcf2"/>
+                <!-- Red cross -->
+                <rect x="10" y="3" width="4" height="2" fill="#e43b44"/>
+                <rect x="11" y="2" width="2" height="3" fill="#e43b44"/>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="6" width="2" height="2" fill="#fffcf2"/></g>
+                <g class="cat-ear" style="animation-delay:1s"><rect x="14" y="6" width="2" height="2" fill="#fffcf2"/></g>
+                <rect x="7" y="7" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="7" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="7" width="10" height="6" fill="#fffcf2"/>
+                <rect x="5" y="8" width="1" height="4" fill="#fffcf2"/>
+                <rect x="16" y="8" width="1" height="4" fill="#fffcf2"/>
+                <!-- Eyes -->
+                <rect x="8" y="9" width="2" height="2" fill="#5a4a42"/>
+                <rect x="12" y="9" width="2" height="2" fill="#5a4a42"/>
+                <rect x="9" y="9" width="1" height="1" fill="#ffffff"/>
+                <rect x="13" y="9" width="1" height="1" fill="#ffffff"/>
+                <!-- Cheeks -->
+                <rect x="6" y="11" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="15" y="11" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Nose + warm smile -->
+                <rect x="11" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="12" width="3" height="1" fill="#5a4a42"/>
+                <!-- White coat body -->
+                <rect x="6" y="13" width="10" height="6" fill="#fffcf2"/>
+                <rect x="11" y="13" width="1" height="6" fill="#d8e2dc"/>
+                <!-- Stethoscope -->
+                <rect x="7" y="13" width="1" height="3" fill="#5a4a42"/>
+                <rect x="15" y="13" width="1" height="3" fill="#5a4a42"/>
+                <rect x="8" y="15" width="1" height="1" fill="#5a4a42"/>
+                <rect x="14" y="15" width="1" height="1" fill="#5a4a42"/>
+                <rect x="9" y="16" width="5" height="1" fill="#5a4a42"/>
+                <rect x="10" y="17" width="3" height="2" fill="#a2d2ff"/>
+                <rect x="11" y="17" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Coat buttons -->
+                <rect x="11" y="14" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="11" y="18" width="1" height="1" fill="#a2d2ff"/>
+                <!-- Feet -->
+                <rect x="7" y="19" width="2" height="1" fill="#5a4a42"/>
+                <rect x="13" y="19" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="14" width="1" height="3" fill="#fffcf2"/>
+                    <rect x="17" y="13" width="1" height="2" fill="#fffcf2"/>
+                    <rect x="18" y="12" width="1" height="2" fill="#fffcf2"/>
+                </g>
+            </svg>`;
+        }
+
+        function catLaw() {
+            // Law — powdered wig, dark robe, gavel
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Wig curls top -->
+                <rect x="5" y="3" width="14" height="2" fill="#fffcf2"/>
+                <rect x="6" y="2" width="12" height="1" fill="#fffcf2"/>
+                <!-- Wig curl alternation -->
+                <rect x="4" y="5" width="2" height="2" fill="#fffcf2"/>
+                <rect x="6" y="5" width="2" height="2" fill="#e5e5e5"/>
+                <rect x="8" y="5" width="2" height="2" fill="#fffcf2"/>
+                <rect x="10" y="5" width="2" height="2" fill="#e5e5e5"/>
+                <rect x="12" y="5" width="2" height="2" fill="#fffcf2"/>
+                <rect x="14" y="5" width="2" height="2" fill="#e5e5e5"/>
+                <rect x="16" y="5" width="2" height="2" fill="#fffcf2"/>
+                <rect x="18" y="5" width="2" height="2" fill="#e5e5e5"/>
+                <!-- Side curls -->
+                <rect x="3" y="7" width="2" height="3" fill="#fffcf2"/>
+                <rect x="19" y="7" width="2" height="3" fill="#fffcf2"/>
+                <rect x="3" y="10" width="2" height="1" fill="#e5e5e5"/>
+                <rect x="19" y="10" width="2" height="1" fill="#e5e5e5"/>
+                <!-- Head (cream) -->
+                <rect x="6" y="8" width="10" height="6" fill="#fcf6bd"/>
+                <rect x="5" y="9" width="1" height="4" fill="#fcf6bd"/>
+                <rect x="16" y="9" width="1" height="4" fill="#fcf6bd"/>
+                <!-- Stern eyes -->
+                <rect x="8" y="10" width="2" height="1" fill="#5a4a42"/>
+                <rect x="12" y="10" width="2" height="1" fill="#5a4a42"/>
+                <!-- Nose + frown -->
+                <rect x="11" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="13" width="3" height="1" fill="#5a4a42"/>
+                <rect x="9" y="12" width="1" height="1" fill="#5a4a42"/>
+                <rect x="13" y="12" width="1" height="1" fill="#5a4a42"/>
+                <!-- Black robe body -->
+                <rect x="5" y="14" width="12" height="5" fill="#3a3340"/>
+                <rect x="4" y="15" width="1" height="3" fill="#3a3340"/>
+                <rect x="17" y="15" width="1" height="3" fill="#3a3340"/>
+                <!-- White collar bands -->
+                <rect x="10" y="14" width="2" height="3" fill="#fffcf2"/>
+                <rect x="9" y="14" width="4" height="1" fill="#fffcf2"/>
+                <!-- Gavel -->
+                <g class="cat-scroll">
+                    <rect x="6" y="16" width="3" height="2" fill="#d4a373"/>
+                    <rect x="6" y="16" width="3" height="1" fill="#8c6a5d"/>
+                    <rect x="9" y="17" width="4" height="1" fill="#8c6a5d"/>
+                </g>
+                <!-- Sound block -->
+                <rect x="14" y="18" width="4" height="1" fill="#d4a373"/>
+                <rect x="14" y="19" width="4" height="1" fill="#8c6a5d"/>
+                <!-- Feet -->
+                <rect x="8" y="19" width="2" height="1" fill="#5a4a42"/>
+                <rect x="12" y="19" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="17" y="15" width="1" height="3" fill="#fcf6bd"/>
+                    <rect x="18" y="14" width="1" height="2" fill="#fcf6bd"/>
+                    <rect x="19" y="13" width="1" height="2" fill="#fcf6bd"/>
+                </g>
+            </svg>`;
+        }
+
+        function catEngineer() {
+            // Engineering / Mechanical / Physics — hard hat, wrench, overalls
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Hard hat -->
+                <rect x="5" y="4" width="14" height="2" fill="#fcf6bd"/>
+                <rect x="6" y="3" width="12" height="1" fill="#fcf6bd"/>
+                <rect x="8" y="2" width="8" height="1" fill="#fcf6bd"/>
+                <!-- Hat band -->
+                <rect x="5" y="6" width="14" height="1" fill="#d4a373"/>
+                <rect x="4" y="6" width="16" height="1" fill="#d4a373"/>
+                <!-- Ears poking out -->
+                <g class="cat-ear"><rect x="6" y="7" width="2" height="1" fill="#d4a373"/></g>
+                <g class="cat-ear" style="animation-delay:1s"><rect x="14" y="7" width="2" height="1" fill="#d4a373"/></g>
+                <!-- Head (sandy) -->
+                <rect x="6" y="7" width="10" height="6" fill="#d4a373"/>
+                <rect x="5" y="8" width="1" height="4" fill="#d4a373"/>
+                <rect x="16" y="8" width="1" height="4" fill="#d4a373"/>
+                <!-- Safety goggles -->
+                <rect x="7" y="9" width="3" height="2" fill="#5a4a42"/>
+                <rect x="8" y="10" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="12" y="9" width="3" height="2" fill="#5a4a42"/>
+                <rect x="13" y="10" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="10" y="10" width="2" height="1" fill="#5a4a42"/>
+                <!-- Cheeks -->
+                <rect x="6" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="15" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <!-- Nose + grin -->
+                <rect x="11" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="12" width="3" height="1" fill="#5a4a42"/>
+                <!-- Orange overalls body -->
+                <rect x="6" y="13" width="10" height="6" fill="#ffb5a7"/>
+                <!-- Overall straps -->
+                <rect x="8" y="13" width="1" height="3" fill="#d4a373"/>
+                <rect x="13" y="13" width="1" height="3" fill="#d4a373"/>
+                <!-- Tool belt -->
+                <rect x="6" y="17" width="10" height="1" fill="#5a4a42"/>
+                <rect x="9" y="18" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="13" y="18" width="1" height="1" fill="#fcf6bd"/>
+                <!-- Wrench in paw -->
+                <g class="cat-scroll">
+                    <rect x="3" y="14" width="2" height="2" fill="#a2d2ff"/>
+                    <rect x="3" y="14" width="2" height="1" fill="#d8e2dc"/>
+                    <rect x="3" y="15" width="1" height="1" fill="#d8e2dc"/>
+                    <rect x="5" y="15" width="3" height="1" fill="#a2d2ff"/>
+                </g>
+                <!-- Feet (work boots) -->
+                <rect x="7" y="19" width="2" height="1" fill="#5a4a42"/>
+                <rect x="13" y="19" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="14" width="1" height="3" fill="#d4a373"/>
+                    <rect x="17" y="13" width="1" height="2" fill="#d4a373"/>
+                    <rect x="18" y="12" width="1" height="2" fill="#d4a373"/>
+                </g>
+            </svg>`;
+        }
+
+        function catBusiness() {
+            // Business / Management / Accounting / Finance — suit, tie, briefcase
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Slicked hair -->
+                <rect x="6" y="5" width="10" height="1" fill="#5a4a42"/>
+                <rect x="5" y="6" width="2" height="1" fill="#5a4a42"/>
+                <rect x="15" y="6" width="2" height="1" fill="#5a4a42"/>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="6" width="2" height="2" fill="#a2d2ff"/></g>
+                <g class="cat-ear" style="animation-delay:1s"><rect x="14" y="6" width="2" height="2" fill="#a2d2ff"/></g>
+                <rect x="7" y="7" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="7" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="7" width="10" height="6" fill="#a2d2ff"/>
+                <rect x="5" y="8" width="1" height="4" fill="#a2d2ff"/>
+                <rect x="16" y="8" width="1" height="4" fill="#a2d2ff"/>
+                <!-- Confident eyes -->
+                <rect x="8" y="9" width="2" height="2" fill="#5a4a42"/>
+                <rect x="12" y="9" width="2" height="2" fill="#5a4a42"/>
+                <rect x="9" y="9" width="1" height="1" fill="#ffffff"/>
+                <rect x="13" y="9" width="1" height="1" fill="#ffffff"/>
+                <!-- Nose + smirk -->
+                <rect x="11" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="12" width="3" height="1" fill="#5a4a42"/>
+                <rect x="13" y="12" width="1" height="1" fill="#ffb5a7"/>
+                <!-- Suit body (navy) -->
+                <rect x="6" y="13" width="10" height="6" fill="#3a4a6c"/>
+                <!-- Suit lapels -->
+                <rect x="9" y="13" width="1" height="3" fill="#1a2a4c"/>
+                <rect x="13" y="13" width="1" height="3" fill="#1a2a4c"/>
+                <!-- White shirt -->
+                <rect x="10" y="13" width="3" height="2" fill="#fffcf2"/>
+                <!-- Red tie -->
+                <rect x="11" y="13" width="1" height="1" fill="#e43b44"/>
+                <rect x="11" y="14" width="1" height="3" fill="#e43b44"/>
+                <rect x="10" y="16" width="3" height="1" fill="#e43b44"/>
+                <rect x="11" y="17" width="1" height="1" fill="#e43b44"/>
+                <!-- Briefcase -->
+                <g class="cat-scroll">
+                    <rect x="15" y="17" width="6" height="3" fill="#8c6a5d"/>
+                    <rect x="17" y="16" width="2" height="1" fill="#8c6a5d"/>
+                    <rect x="17" y="17" width="2" height="1" fill="#5a4a42"/>
+                    <rect x="17" y="18" width="2" height="1" fill="#d4a373"/>
+                </g>
+                <!-- Feet (polished shoes) -->
+                <rect x="7" y="19" width="2" height="1" fill="#1a1a1a"/>
+                <rect x="13" y="19" width="2" height="1" fill="#1a1a1a"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="14" width="1" height="3" fill="#a2d2ff"/>
+                    <rect x="17" y="13" width="1" height="2" fill="#a2d2ff"/>
+                    <rect x="18" y="12" width="1" height="2" fill="#a2d2ff"/>
+                </g>
+            </svg>`;
+        }
+
+        function catDesigner() {
+            // Graphic Design / Architecture / Art — beret, paintbrush, palette
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Beret -->
+                <rect x="6" y="5" width="10" height="2" fill="#dcd3ff"/>
+                <rect x="7" y="4" width="8" height="1" fill="#dcd3ff"/>
+                <rect x="15" y="5" width="2" height="1" fill="#dcd3ff"/>
+                <rect x="16" y="4" width="1" height="1" fill="#9d8cdf"/>
+                <!-- Beret stem -->
+                <rect x="11" y="3" width="1" height="2" fill="#5a4a42"/>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="7" width="2" height="1" fill="#9d8cdf"/></g>
+                <g class="cat-ear" style="animation-delay:1s"><rect x="14" y="7" width="2" height="1" fill="#9d8cdf"/></g>
+                <!-- Head (lavender) -->
+                <rect x="6" y="7" width="10" height="6" fill="#dcd3ff"/>
+                <rect x="5" y="8" width="1" height="4" fill="#dcd3ff"/>
+                <rect x="16" y="8" width="1" height="4" fill="#dcd3ff"/>
+                <!-- Creative wide eyes -->
+                <rect x="8" y="9" width="2" height="2" fill="#5a4a42"/>
+                <rect x="12" y="9" width="2" height="2" fill="#5a4a42"/>
+                <rect x="9" y="9" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="13" y="9" width="1" height="1" fill="#fcf6bd"/>
+                <!-- Paint splotch cheeks -->
+                <rect x="6" y="11" width="1" height="1" fill="#e43b44"/>
+                <rect x="15" y="11" width="1" height="1" fill="#b5e48c"/>
+                <!-- Nose + smile -->
+                <rect x="11" y="11" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="12" width="3" height="1" fill="#5a4a42"/>
+                <!-- Body -->
+                <rect x="6" y="13" width="10" height="6" fill="#dcd3ff"/>
+                <!-- Paint smudges -->
+                <rect x="7" y="14" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="14" y="15" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="9" y="16" width="2" height="1" fill="#ffcbf2"/>
+                <!-- Paintbrush -->
+                <g class="cat-scroll">
+                    <rect x="3" y="15" width="2" height="1" fill="#e43b44"/>
+                    <rect x="5" y="15" width="1" height="1" fill="#5a4a42"/>
+                    <rect x="6" y="15" width="2" height="1" fill="#d4a373"/>
+                </g>
+                <!-- Palette -->
+                <rect x="14" y="17" width="6" height="2" fill="#fffcf2"/>
+                <rect x="14" y="17" width="1" height="1" fill="#e43b44"/>
+                <rect x="16" y="18" width="1" height="1" fill="#b5e48c"/>
+                <rect x="17" y="17" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="19" y="18" width="1" height="1" fill="#fcf6bd"/>
+                <!-- Feet -->
+                <rect x="7" y="19" width="2" height="1" fill="#5a4a42"/>
+                <rect x="11" y="19" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="14" width="1" height="3" fill="#dcd3ff"/>
+                    <rect x="17" y="13" width="1" height="2" fill="#dcd3ff"/>
+                    <rect x="18" y="12" width="1" height="2" fill="#dcd3ff"/>
+                </g>
+            </svg>`;
+        }
+
+        function catTherapist() {
+            // Psychology / Social Sciences / Education — mint cardigan, clipboard, pencil
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="5" width="2" height="2" fill="#d8e2dc"/></g>
+                <g class="cat-ear" style="animation-delay:1s"><rect x="14" y="5" width="2" height="2" fill="#d8e2dc"/></g>
+                <rect x="7" y="6" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="6" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="6" width="10" height="6" fill="#d8e2dc"/>
+                <rect x="5" y="7" width="1" height="4" fill="#d8e2dc"/>
+                <rect x="16" y="7" width="1" height="4" fill="#d8e2dc"/>
+                <!-- Round attentive glasses -->
+                <rect x="7" y="8" width="3" height="3" fill="#5a4a42"/>
+                <rect x="8" y="9" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="12" y="8" width="3" height="3" fill="#5a4a42"/>
+                <rect x="13" y="9" width="1" height="1" fill="#a2d2ff"/>
+                <rect x="10" y="9" width="2" height="1" fill="#5a4a42"/>
+                <!-- Cheeks -->
+                <rect x="6" y="10" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="15" y="10" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Nose + gentle smile -->
+                <rect x="11" y="10" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="11" width="1" height="1" fill="#5a4a42"/>
+                <rect x="12" y="11" width="1" height="1" fill="#5a4a42"/>
+                <rect x="11" y="12" width="1" height="1" fill="#5a4a42"/>
+                <!-- Body (mint cardigan) -->
+                <rect x="6" y="13" width="10" height="6" fill="#b5e48c"/>
+                <!-- Cardigan center line -->
+                <rect x="11" y="13" width="1" height="6" fill="#d8e2dc"/>
+                <!-- Buttons -->
+                <rect x="11" y="14" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="11" y="16" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="11" y="18" width="1" height="1" fill="#fcf6bd"/>
+                <!-- Clipboard -->
+                <g class="cat-scroll">
+                    <rect x="14" y="14" width="5" height="5" fill="#d4a373"/>
+                    <rect x="15" y="15" width="3" height="3" fill="#fffcf2"/>
+                    <rect x="15" y="15" width="3" height="1" fill="#a2d2ff"/>
+                    <rect x="15" y="17" width="3" height="1" fill="#a2d2ff"/>
+                    <rect x="16" y="14" width="1" height="1" fill="#5a4a42"/>
+                </g>
+                <!-- Pencil in left paw -->
+                <rect x="4" y="14" width="1" height="3" fill="#fcf6bd"/>
+                <rect x="4" y="13" width="1" height="1" fill="#5a4a42"/>
+                <rect x="4" y="17" width="1" height="1" fill="#ffb5a7"/>
+                <!-- Feet -->
+                <rect x="7" y="19" width="2" height="1" fill="#5a4a42"/>
+                <rect x="13" y="19" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="14" width="1" height="3" fill="#d8e2dc"/>
+                    <rect x="17" y="13" width="1" height="2" fill="#d8e2dc"/>
+                    <rect x="18" y="12" width="1" height="2" fill="#d8e2dc"/>
+                </g>
+            </svg>`;
+        }
+
+        // --- COURSE → CAT PICKER ---
+        // Keyword-matched. Falls back to the degree-level cat when no subject matches.
+        function getCatForCourse(courseRaw, mode) {
+            const c = (courseRaw || '').toLowerCase();
+            if (/cyber|hack|security|infosec|forensic/.test(c)) return catHacker();
+            if (/comput|software|\bcode|programm|data scien|machine learn|\bai\b|artif|inform tech/.test(c)) return catCoder();
+            if (/medic|nurs|health|biolog|pharm|dent|veter|midwif|paramedic|surger|physio/.test(c)) return catMedic();
+            if (/\blaw\b|legal|barrister|solicitor|jurispru|crimin/.test(c)) return catLaw();
+            if (/engineer|mechanic|physic|chemist|material|aerospace|electric|civil|robot/.test(c)) return catEngineer();
+            if (/business|manage|account|finance|econom|market|\bmba\b|commerc|entrepren/.test(c)) return catBusiness();
+            if (/design|\bart\b|graphic|architec|fashion|illustrat|anim|film|media|photo/.test(c)) return catDesigner();
+            if (/psycho|social|therap|counsel|sociol|educat|teach|polit|histor|philos|anthrop/.test(c)) return catTherapist();
+            // No subject match → degree-level fallback
+            if (mode === 'bsc') return catBSc();
+            if (mode === 'msc') return catMSc();
+            if (mode === 'phd') return catPhD();
+            return catRainy();
+        }
+
         function renderForecastCat(mode, isFailing) {
             const targetId = `forecast-cat-${mode}`;
             const target = document.getElementById(targetId);
             if (!target) return;
-            let svg;
-            if (isFailing) svg = catRainy();
-            else if (mode === 'bsc') svg = catBSc();
-            else if (mode === 'msc') svg = catMSc();
-            else if (mode === 'phd') svg = catPhD();
-            else svg = catRainy();
-            target.innerHTML = svg;
+            if (isFailing) { target.innerHTML = catRainy(); return; }
+            const courseEl = document.getElementById('display-course');
+            const course = courseEl ? courseEl.innerText : '';
+            target.innerHTML = getCatForCourse(course, mode);
         }
 
         function changeDegreeLevel(forcedMode) {
