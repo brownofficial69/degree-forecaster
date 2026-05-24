@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Academic Forecaster v0.9</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* === CORE PASTEL PIXEL STYLES === */
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #fdf6e3;
+            background-image:
+                linear-gradient(45deg, #faedcd 25%, transparent 25%, transparent 75%, #faedcd 75%, #faedcd),
+                linear-gradient(45deg, #faedcd 25%, transparent 25%, transparent 75%, #faedcd 75%, #faedcd);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            min-height: 100vh;
+            color: #5a4a42;
+            font-size: 1.25rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        h1 { font-family: 'Press Start 2P', cursive; line-height: 1.5; color: #5a4a42; }
+
+        .pixel-panel {
+            background: #fffcf2;
+            border: 4px solid #5a4a42;
+            box-shadow: 8px 8px 0px #d4a373;
+            z-index: 10;
+        }
+
+        .pixel-box { background: #ffffff; border: 4px solid #5a4a42; box-shadow: 4px 4px 0px #5a4a42; }
+
+        /* Screen Transitions */
+        .app-screen { display: none; animation: popIn 0.3s steps(4, end); }
+        .app-screen.active-screen { display: block; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: popIn 0.2s steps(4, end); }
+        .hidden-group { display: none !important; }
+
+        @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* === AMBIENT ANIMATIONS === */
+        @keyframes idleSway { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(5deg) translateY(-4px); } }
+        @keyframes floatSlow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes floatFast { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes steamRise { 0% { opacity: 0; transform: translateY(5px) scale(0.8); } 50% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-15px) scale(1.2); } }
+        @keyframes blink { 0%, 96%, 100% { opacity: 1; } 98% { opacity: 0; } }
+        @keyframes screenFlicker { 0%, 100% { opacity: 0.9; } 50% { opacity: 1; } }
+        @keyframes tailWag { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+        @keyframes earTwitch { 0%, 90%, 100% { transform: translateY(0); } 95% { transform: translateY(-1px); } }
+        @keyframes rainFall { 0% { transform: translateY(-8px); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(40px); opacity: 0; } }
+        @keyframes tasselSwing { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+        @keyframes scrollBob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-2px) rotate(2deg); } }
+        @keyframes catBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes lightningFlash { 0%, 92%, 100% { opacity: 0; } 94%, 96% { opacity: 1; } }
+
+        .char-idle { animation: idleSway 3s infinite ease-in-out; display: inline-block; }
+        .hover-bounce:hover { animation: popIn 0.2s steps(2, end); cursor: pointer; }
+        .ambient-float { animation: floatSlow 4s infinite ease-in-out; }
+        .ambient-float-alt { animation: floatFast 3s infinite ease-in-out; }
+        .steam-puff { animation: steamRise 2s infinite ease-out; }
+        .steam-puff-delay { animation: steamRise 2.5s infinite ease-out 1s; }
+        .screen-glow { animation: screenFlicker 0.2s infinite; }
+
+        /* Forecast Cat */
+        .forecast-cat-wrap { animation: catBob 2.5s infinite ease-in-out; transform-origin: center; }
+        .cat-tail { animation: tailWag 1.5s infinite ease-in-out; transform-origin: bottom left; }
+        .cat-ear { animation: earTwitch 4s infinite ease-in-out; transform-origin: center bottom; }
+        .cat-tassel { animation: tasselSwing 2s infinite ease-in-out; transform-origin: top center; }
+        .cat-scroll { animation: scrollBob 2s infinite ease-in-out; transform-origin: center; }
+        .rain-drop { animation: rainFall 1.2s infinite linear; }
+        .rain-drop-2 { animation: rainFall 1.4s infinite linear 0.3s; }
+        .rain-drop-3 { animation: rainFall 1.1s infinite linear 0.6s; }
+        .rain-drop-4 { animation: rainFall 1.3s infinite linear 0.9s; }
+        .rain-drop-5 { animation: rainFall 1.5s infinite linear 0.2s; }
+        .lightning { animation: lightningFlash 5s infinite ease-in-out; }
+
+        /* === UI CONTROLS === */
+        .tab-btn {
+            background: #ffd1d4;
+            border: 4px solid #5a4a42; color: #5a4a42;
+            box-shadow: 4px 4px 0px #5a4a42; transition: all 0.1s; text-transform: uppercase; cursor: pointer;
+        }
+        .tab-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #5a4a42; }
+        .tab-btn:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #5a4a42; }
+        .tab-btn.active-tab { background: #d8e2dc; transform: translate(4px, 4px); box-shadow: 0px 0px 0px #5a4a42; }
+        .btn-start { background: #fcf6bd; font-size: 1.5rem; padding: 1rem 2rem; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0%, 100% { box-shadow: 4px 4px 0px #5a4a42; transform: translate(0, 0); } 50% { box-shadow: 2px 2px 0px #5a4a42; transform: translate(2px, 2px); } }
+
+        select, input[type="text"] {
+            background: #ffffff; border: 4px solid #5a4a42; padding: 0.5rem; color: #5a4a42;
+            font-family: 'VT323', monospace; font-size: 1.25rem; box-shadow: 4px 4px 0px #5a4a42; outline: none; width: 100%; cursor: text;
+        }
+        select { cursor: pointer; }
+        select:active, input[type="text"]:focus { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #5a4a42; }
+
+        .module-name-input { background: transparent; border: none; border-bottom: 2px dashed #5a4a42; box-shadow: none; width: 100%; padding: 0.2rem; }
+        .module-name-input:focus { background: rgba(255, 255, 255, 0.5); border-bottom: 2px solid #5a4a42; transform: none; box-shadow: none; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 16px; background: #ffb5a7; border: 4px solid #5a4a42; cursor: pointer; margin-top: -8px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #5a4a42; border: 2px solid #5a4a42; }
+
+        .phd-check { width: 24px; height: 24px; border: 4px solid #5a4a42; appearance: none; outline: none; cursor: pointer; background: #fff; position: relative; }
+        .phd-check:checked { background: #b5e48c; }
+        .phd-check:checked::after { content: '✓'; position: absolute; color: #5a4a42; font-weight: bold; font-size: 18px; top: -4px; left: 2px; }
+
+        /* Pastel Result Cards */
+        .grade-1st { background: #fcf6bd; color: #5a4a42; }
+        .grade-21 { background: #a2d2ff; color: #5a4a42; }
+        .grade-22 { background: #ffcbf2; color: #5a4a42; }
+        .grade-other { background: #e5e5e5; color: #5a4a42; }
+
+        /* Universal Control Bar */
+        .control-bar { background: #faedcd; border: 4px solid #5a4a42; box-shadow: 4px 4px 0px #5a4a42; }
+        .btn-add { background: #b5e48c; }
+        .btn-remove { background: #ffb5a7; }
+        .btn-reset { background: #ffd6a5; }
+        .btn-wipe { background: #e43b44; color: #fffcf2; }
+
+        /* Print Media Query for PDF Export */
+        @media print {
+            body { background: white; color: black; }
+            .fixed, .ambient-float, .ambient-float-alt, #tab-nav-container, button, .border-b-4, #control-bar { display: none !important; }
+            .pixel-panel { box-shadow: none; border: none; background: white; margin: 0; padding: 0; }
+            .grade-1st, .grade-21, .grade-22, .grade-other { -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 2px solid black; }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4 sm:p-8" onclick="initAudio()">
+
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block">
+        <div class="absolute top-12 left-12 ambient-float pointer-events-auto hover-bounce" onclick="sfxSip()">
+            <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-24 h-24 drop-shadow-lg">
+                <rect x="5" y="0" width="2" height="3" fill="#ffffff" class="steam-puff"/>
+                <rect x="9" y="2" width="2" height="3" fill="#ffffff" class="steam-puff-delay"/>
+                <rect x="3" y="6" width="8" height="8" fill="#ffb5a7"/> <rect x="11" y="8" width="2" height="4" fill="#ffb5a7"/>
+                <rect x="12" y="9" width="1" height="2" fill="#fdf6e3"/> <rect x="4" y="6" width="6" height="1" fill="#8c6a5d"/>
+                <rect x="4" y="9" width="6" height="4" fill="#ffcbf2"/> <rect x="6" y="10" width="2" height="2" fill="#ffffff"/>
+            </svg>
+        </div>
+        <div class="absolute bottom-12 left-12 ambient-float-alt pointer-events-auto hover-bounce" onclick="sfxMeow()">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-32 h-32 drop-shadow-lg">
+                <rect x="2" y="18" width="20" height="4" fill="#a2d2ff"/> <rect x="3" y="18" width="18" height="1" fill="#ffffff"/>
+                <rect x="4" y="14" width="16" height="4" fill="#ffcbf2"/> <rect x="5" y="14" width="14" height="1" fill="#ffffff"/>
+                <rect x="5" y="10" width="14" height="4" fill="#b5e48c"/> <rect x="6" y="10" width="12" height="1" fill="#ffffff"/>
+                <rect x="7" y="6" width="10" height="4" fill="#faedcd"/> <rect x="7" y="5" width="2" height="1" fill="#faedcd"/>
+                <rect x="11" y="5" width="2" height="1" fill="#faedcd"/> <rect x="15" y="7" width="3" height="1" fill="#faedcd"/>
+                <rect x="12" y="6" width="3" height="2" fill="#d4a373"/> <rect x="8" y="7" width="1" height="1" fill="#5a4a42" style="animation: blink 4s infinite;"/>
+            </svg>
+        </div>
+        <div class="absolute bottom-12 right-12 ambient-float pointer-events-auto hover-bounce" onclick="sfxCompute()">
+            <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-32 h-32 drop-shadow-lg">
+                <rect x="2" y="2" width="16" height="14" fill="#dcd3ff"/> <rect x="3" y="3" width="14" height="12" fill="#b4d4e1"/>
+                <rect x="4" y="4" width="12" height="10" fill="#5a4a42"/>
+                <rect x="5" y="5" width="4" height="1" fill="#b5e48c" class="screen-glow"/> <rect x="5" y="7" width="6" height="1" fill="#b5e48c" class="screen-glow"/> <rect x="5" y="9" width="3" height="1" fill="#b5e48c" class="screen-glow"/>
+                <rect x="8" y="16" width="4" height="2" fill="#dcd3ff"/> <rect x="6" y="18" width="8" height="2" fill="#b4d4e1"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="screen-setup" class="app-screen active-screen pixel-panel relative w-full max-w-2xl p-8 sm:p-12 mt-4 text-center z-10">
+        <div class="flex justify-center items-end mb-6 gap-4">
+            <div id="hero-char" class="char-idle w-16 h-16 sm:w-20 sm:h-20 shrink-0">
+                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-full h-full drop-shadow-md">
+                    <rect x="6" y="3" width="4" height="4" fill="#ffccaa"/> <rect x="4" y="2" width="8" height="1" fill="#5a4a42"/> <rect x="5" y="1" width="6" height="1" fill="#5a4a42"/> <rect x="11" y="2" width="1" height="3" fill="#ff9aa2"/>
+                    <rect x="7" y="5" width="1" height="1" fill="#5a4a42"/> <rect x="9" y="5" width="1" height="1" fill="#5a4a42"/> <rect x="5" y="7" width="6" height="5" fill="#a2d2ff"/> <rect x="6" y="8" width="4" height="4" fill="#b4d4e1"/>
+                    <rect x="6" y="12" width="1" height="2" fill="#5a4a42"/> <rect x="9" y="12" width="1" height="2" fill="#5a4a42"/>
+                </svg>
+            </div>
+        </div>
+
+        <h1 class="text-2xl sm:text-4xl font-bold tracking-tight mb-4">DEGREE FORECASTER</h1>
+        <p class="text-xl mb-10">Select your academic path to begin.</p>
+
+        <div class="flex flex-col gap-6 text-left mb-10">
+            <div class="flex flex-col gap-2">
+                <label class="font-bold text-xl uppercase">> University <span id="api-status" class="text-sm font-normal text-gray-500">(Connecting to DB...)</span></label>
+                <input type="text" id="uni-input" list="uni-list" placeholder="Search institution..." oninput="sfxClick()">
+                <datalist id="uni-list"></datalist>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-bold text-xl uppercase">> Course Name</label>
+                <input type="text" id="course-input" list="course-list" placeholder="Select or type your course..." oninput="sfxClick()">
+                <datalist id="course-list">
+                    <option value="Ethical Hacking and Cyber Security"></option>
+                    <option value="Computer Science"></option>
+                    <option value="Business Management"></option>
+                    <option value="Mechanical Engineering"></option>
+                    <option value="Psychology"></option>
+                    <option value="Law"></option>
+                    <option value="Medicine"></option>
+                    <option value="Architecture"></option>
+                    <option value="Graphic Design"></option>
+                    <option value="Accounting and Finance"></option>
+                    <option value="Nursing"></option>
+                    <option value="Data Science"></option>
+                </datalist>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-bold text-xl uppercase">> Degree Level</label>
+                <select id="degree-select" onchange="sfxClick()">
+                    <option value="bsc" selected>BSc / BA (Undergraduate)</option>
+                    <option value="msc">MSc / MA (Master's)</option>
+                    <option value="phd">PhD (Doctorate)</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="startGame()" class="tab-btn btn-start font-bold uppercase w-full text-[#5a4a42]">START ENGINE</button>
+    </div>
+
+    <!-- APP SCREEN -->
+    <div id="screen-app" class="app-screen pixel-panel relative w-full max-w-5xl p-6 sm:p-10 mt-4 z-10">
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8 border-b-4 border-[#5a4a42] pb-4 gap-4">
+            <button onclick="goBack()" class="tab-btn bg-[#ffb5a7] px-4 py-2 font-bold uppercase text-lg shrink-0">< BACK</button>
+            <div class="text-center sm:text-right w-full">
+                <p id="display-course" class="text-2xl font-bold uppercase truncate">Course Name</p>
+                <p id="display-uni" class="text-lg opacity-80 truncate">University Name</p>
+            </div>
+            <div id="prop-char" class="char-idle w-12 h-12 shrink-0 hidden sm:block">
+                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-full h-full drop-shadow-sm">
+                    <rect x="7" y="8" width="2" height="6" fill="#b5e48c"/> <rect x="9" y="10" width="2" height="1" fill="#b5e48c"/>
+                    <rect x="7" y="4" width="2" height="2" fill="#fcf6bd"/> <rect x="7" y="2" width="2" height="2" fill="#ffb5a7"/>
+                    <rect x="7" y="6" width="2" height="2" fill="#ffb5a7"/> <rect x="5" y="4" width="2" height="2" fill="#ffb5a7"/> <rect x="9" y="4" width="2" height="2" fill="#ffb5a7"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- UNIVERSAL CONTROL BAR -->
+        <div id="control-bar" class="control-bar p-4 mb-8 flex flex-wrap items-center justify-between gap-3">
+            <span id="save-indicator" class="text-sm font-bold text-[#8c6a5d] uppercase">Auto-Saved ✓</span>
+            <div class="flex flex-wrap gap-3 items-center">
+                <button id="btn-add-universal" onclick="addModuleSmart()" class="tab-btn btn-add px-4 py-2 font-bold text-lg hover-bounce">+ ADD MODULE</button>
+                <button id="btn-remove-universal" onclick="removeModuleSmart()" class="tab-btn btn-remove px-4 py-2 font-bold text-lg hover-bounce">- REMOVE</button>
+                <button onclick="resetAllTo40()" class="tab-btn btn-reset px-4 py-2 font-bold text-lg hover-bounce" title="Reset grades for the current degree mode">↻ RESET MODE</button>
+                <button onclick="wipeEverything()" class="tab-btn btn-wipe px-4 py-2 font-bold text-lg hover-bounce" title="Wipe ALL data across all degree modes">⌫ WIPE ALL</button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 mb-8" id="tab-nav-container">
+            <button onclick="switchTab('year1')" id="btn-year1" class="tab-btn bsc-tab px-6 py-2 font-bold text-xl hover-bounce">Year 1</button>
+            <button onclick="switchTab('year2')" id="btn-year2" class="tab-btn bsc-tab px-6 py-2 font-bold text-xl hover-bounce">Year 2</button>
+            <button onclick="switchTab('year3')" id="btn-year3" class="tab-btn bsc-tab px-6 py-2 font-bold text-xl hover-bounce">Year 3</button>
+            <button onclick="switchTab('results-bsc')" id="btn-results-bsc" class="tab-btn bsc-tab px-6 py-2 font-bold text-xl active-tab hover-bounce">Forecast</button>
+
+            <button onclick="switchTab('msc-modules')" id="btn-msc-modules" class="tab-btn msc-tab hidden-group px-6 py-2 font-bold text-xl hover-bounce">Modules</button>
+            <button onclick="switchTab('results-msc')" id="btn-results-msc" class="tab-btn msc-tab hidden-group px-6 py-2 font-bold text-xl hover-bounce">Forecast</button>
+
+            <button onclick="switchTab('phd-tracker')" id="btn-phd-tracker" class="tab-btn phd-tab hidden-group px-6 py-2 font-bold text-xl hover-bounce">Milestones</button>
+            <button onclick="switchTab('results-phd')" id="btn-results-phd" class="tab-btn phd-tab hidden-group px-6 py-2 font-bold text-xl hover-bounce">Status</button>
+        </div>
+
+        <div id="year1" class="tab-content bsc-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" id="y1-sliders"></div>
+        </div>
+        <div id="year2" class="tab-content bsc-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" id="y2-sliders"></div>
+        </div>
+        <div id="year3" class="tab-content bsc-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" id="y3-sliders"></div>
+        </div>
+
+        <!-- BSc FORECAST -->
+        <div id="results-bsc" class="tab-content bsc-content active text-center">
+            <div id="result-card-bsc" class="grade-1st p-8 mb-8 border-4 border-[#5a4a42]">
+                <p id="classification-bsc" class="text-3xl font-bold mb-4 uppercase font-['Press_Start_2P'] text-[16px] sm:text-[20px]">FIRST-CLASS</p>
+                <p id="final-score-bsc" class="text-6xl font-bold mb-6">76.67%</p>
+                <div class="inline-block bg-[#5a4a42] text-[#fffcf2] px-4 py-2 font-bold uppercase text-lg cursor-help" title="Method 1 relies solely on your final year average. Method 2 calculates 30% from Year 2 and 70% from Year 3. Your university automatically awards the higher of the two.">
+                    <span id="method-used-bsc">Method 1 (100% Year 3)</span>
+                    <span class="text-sm opacity-70 ml-2">(?)</span>
+                </div>
+            </div>
+            <div id="forecast-cat-bsc" class="flex justify-center mb-6"></div>
+            <div class="pixel-box p-6 mb-6 text-left flex justify-between items-center">
+                <p id="target-metric-text-bsc" class="text-xl font-bold"></p>
+                <button onclick="window.print()" class="tab-btn bg-[#a2d2ff] px-4 py-2 text-sm">Save PDF</button>
+            </div>
+        </div>
+
+        <div id="msc-modules" class="tab-content msc-content hidden-group">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" id="msc-sliders"></div>
+        </div>
+
+        <!-- MSc FORECAST -->
+        <div id="results-msc" class="tab-content msc-content hidden-group text-center">
+            <div id="result-card-msc" class="grade-1st p-8 mb-8 border-4 border-[#5a4a42]">
+                <p id="classification-msc" class="text-3xl font-bold mb-4 uppercase font-['Press_Start_2P'] text-[16px] sm:text-[20px]">DISTINCTION</p>
+                <p id="final-score-msc" class="text-6xl font-bold mb-6">75.00%</p>
+                <div class="inline-block bg-[#5a4a42] text-[#fffcf2] px-4 py-2 font-bold uppercase text-lg"><span>Master's Average</span></div>
+            </div>
+            <div id="forecast-cat-msc" class="flex justify-center mb-6"></div>
+            <div class="pixel-box p-6 mb-6 text-left flex justify-between items-center">
+                <p id="target-metric-text-msc" class="text-xl font-bold"></p>
+                <button onclick="window.print()" class="tab-btn bg-[#a2d2ff] px-4 py-2 text-sm">Save PDF</button>
+            </div>
+        </div>
+
+        <div id="phd-tracker" class="tab-content phd-content hidden-group">
+            <div class="grid grid-cols-1 gap-4 mb-8" id="phd-checkboxes"></div>
+        </div>
+
+        <!-- PhD STATUS -->
+        <div id="results-phd" class="tab-content phd-content hidden-group text-center">
+            <div id="result-card-phd" class="grade-other p-8 mb-8 border-4 border-[#5a4a42]">
+                <p id="classification-phd" class="text-3xl font-bold mb-4 uppercase font-['Press_Start_2P'] text-[16px] sm:text-[20px]">IN PROGRESS</p>
+                <div class="w-full bg-[#5a4a42] h-8 mt-6 p-1"><div id="phd-progress-bar" class="bg-[#b5e48c] h-full transition-all duration-300" style="width: 25%;"></div></div>
+                <p class="mt-4 font-bold text-xl"><span id="phd-percent-text">25</span>% Completed</p>
+            </div>
+            <div id="forecast-cat-phd" class="flex justify-center mb-6"></div>
+            <div class="pixel-box p-6 mb-6 text-left flex justify-between items-center">
+                <p id="target-metric-text-phd" class="text-xl font-bold"></p>
+                <button onclick="window.print()" class="tab-btn bg-[#a2d2ff] px-4 py-2 text-sm">Save PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 text-center text-[#d4a373] font-bold uppercase tracking-widest text-lg z-10 relative">
+        v0.9 | Made by shad
+    </div>
+
+    <script>
+        // --- Custom 8-bit Audio Synthesizer ---
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+        function playTone(freq, type, duration, vol = 0.05) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const sfxClick = () => playTone(600, 'square', 0.05, 0.03);
+        const sfxBlip = () => playTone(900, 'square', 0.03, 0.02);
+        const sfxAdd = () => { playTone(500, 'square', 0.1); setTimeout(() => playTone(1000, 'square', 0.1), 100); };
+        const sfxRemove = () => { playTone(400, 'square', 0.1); setTimeout(() => playTone(200, 'square', 0.1), 100); };
+        const sfxReset = () => { playTone(300, 'sawtooth', 0.1); setTimeout(() => playTone(150, 'sawtooth', 0.2), 100); };
+        const sfxWipe = () => { [800, 600, 400, 200, 100].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.1, 0.04), i * 60)); };
+        const sfxPowerUp = () => { [300, 400, 500, 600, 700].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.1), i * 50)); };
+        const sfxWin = () => { [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => setTimeout(() => playTone(freq, 'square', 0.2), i * 150)); };
+        const sfxMeow = () => { playTone(800, 'sine', 0.2, 0.05); setTimeout(() => playTone(900, 'sine', 0.3, 0.04), 100); };
+        const sfxCompute = () => { [1200, 800, 1500, 600].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.05, 0.02), i * 50)); };
+        const sfxSip = () => { playTone(400, 'sine', 0.1, 0.03); setTimeout(() => playTone(450, 'sine', 0.1, 0.03), 100); };
+
+        // --- Fetch UK Universities via API ---
+        async function fetchUniversities() {
+            const apiStatus = document.getElementById('api-status');
+            const dataList = document.getElementById('uni-list');
+            try {
+                const response = await fetch('http://universities.hipolabs.com/search?country=United+Kingdom');
+                const data = await response.json();
+                const uniNames = [...new Set(data.map(u => u.name))].sort();
+                uniNames.forEach(name => { dataList.appendChild(new Option(name, name)); });
+                apiStatus.innerText = "(Loaded " + uniNames.length + " Unis)";
+                apiStatus.classList.replace('text-gray-500', 'text-[#b5e48c]');
+            } catch (error) {
+                apiStatus.innerText = "(Offline Mode)";
+                apiStatus.classList.replace('text-gray-500', 'text-[#ffb5a7]');
+                const fallbackUnis = ["Coventry University", "University of Birmingham", "Aston University", "Imperial College London", "University of Manchester"];
+                fallbackUnis.forEach(name => { dataList.appendChild(new Option(name, name)); });
+            }
+        }
+        fetchUniversities();
+
+        // --- Core Application State & LOCAL STORAGE ---
+        const defaultState = {
+            bsc: {
+                y1: { grades: [82, 74, 72, 70, 64, 61], names: ["Module 1", "Module 2", "Module 3", "Module 4", "Module 5", "Module 6"] },
+                y2: { grades: [81, 68, 67, 61, 60, 58], names: ["Module 1", "Module 2", "Module 3", "Module 4", "Module 5", "Module 6"] },
+                y3: { grades: [87, 75, 73, 71, 60, 54], names: ["Module 1", "Module 2", "Module 3", "Module 4", "Module 5", "Final Project"] }
+            },
+            msc: { grades: [72, 68, 75, 61, 80], names: ["Core 1", "Core 2", "Elective 1", "Elective 2", "Dissertation"] },
+            phd: { stages: [{ name: "Literature Review Approved", done: true }, { name: "First Year Transfer", done: false }, { name: "Data Collection", done: false }, { name: "Draft Chapters", done: false }, { name: "Thesis Submitted", done: false }, { name: "Viva Voce Passed", done: false }] }
+        };
+
+        let state = JSON.parse(localStorage.getItem('academicForecasterStateV9')) || JSON.parse(JSON.stringify(defaultState));
+
+        function saveState() {
+            localStorage.setItem('academicForecasterStateV9', JSON.stringify(state));
+            const ind = document.getElementById('save-indicator');
+            ind.innerText = "Saving...";
+            setTimeout(() => { ind.innerText = "Auto-Saved ✓"; ind.style.color = "#b5e48c"; }, 500);
+            setTimeout(() => { ind.style.color = "#8c6a5d"; }, 2000);
+        }
+
+        // --- Screen Navigation ---
+        function startGame() {
+            sfxPowerUp();
+            const uniInput = document.getElementById('uni-input').value || "Unknown University";
+            const courseInput = document.getElementById('course-input').value || "Unknown Course";
+            const degreeMode = document.getElementById('degree-select').value;
+
+            document.getElementById('display-uni').innerText = uniInput;
+            document.getElementById('display-course').innerText = courseInput;
+            changeDegreeLevel(degreeMode);
+
+            document.getElementById('screen-setup').classList.remove('active-screen');
+            document.getElementById('screen-app').classList.add('active-screen');
+        }
+
+        function goBack() {
+            sfxRemove();
+            document.getElementById('screen-app').classList.remove('active-screen');
+            document.getElementById('screen-setup').classList.add('active-screen');
+        }
+
+        // --- UI Generation ---
+        function createSliders(level, yearKey, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            let data = level === 'bsc' ? state.bsc[yearKey] : state.msc;
+
+            data.grades.forEach((val, i) => {
+                let name = data.names[i];
+                let isFinal = i === data.grades.length - 1;
+                let highlightStyle = isFinal ? "bg-[#fcf6bd]" : "bg-white";
+
+                container.innerHTML += `
+                    <div class="flex flex-col pixel-box p-4 ${highlightStyle}">
+                        <div class="flex justify-between items-center mb-4 gap-4">
+                            <input type="text" value="${name}" class="module-name-input text-xl font-bold uppercase" onchange="updateName('${level}', '${yearKey}', ${i}, this.value)" placeholder="Enter Name">
+                            <div class="bg-[#5a4a42] text-[#fffcf2] px-3 py-1 font-bold text-xl min-w-[70px] text-center shrink-0"><span id="${level}-${yearKey}-val-${i}">${val}</span>%</div>
+                        </div>
+                        <input type="range" min="0" max="100" value="${val}" class="w-full" oninput="updateValue('${level}', '${yearKey}', ${i}, this.value)">
+                    </div>
+                `;
+            });
+        }
+
+        function createPhDCheckboxes() {
+            const container = document.getElementById('phd-checkboxes');
+            container.innerHTML = '';
+            state.phd.stages.forEach((stage, i) => {
+                container.innerHTML += `
+                    <label class="flex items-center gap-4 pixel-box p-4 cursor-pointer hover:bg-gray-50" onmousedown="sfxClick()">
+                        <input type="checkbox" class="phd-check" ${stage.done ? 'checked' : ''} onchange="updatePhD(${i}, this.checked)">
+                        <span class="text-xl font-bold uppercase">${stage.name}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function updateName(level, yearKey, index, newName) {
+            if (level === 'bsc') state.bsc[yearKey].names[index] = newName; else state.msc.names[index] = newName;
+            saveState();
+        }
+        function updateValue(level, yearKey, index, value) {
+            if (level === 'bsc') state.bsc[yearKey].grades[index] = parseInt(value); else state.msc.grades[index] = parseInt(value);
+            document.getElementById(`${level}-${yearKey}-val-${index}`).innerText = value;
+            sfxBlip(); calculateCurrentMode(); saveState();
+        }
+        function updatePhD(index, isChecked) { state.phd.stages[index].done = isChecked; calculatePhD(); saveState(); }
+
+        // --- Smart Add/Remove (works from any tab) ---
+        function activeYearKey() {
+            // returns 'y1' | 'y2' | 'y3' based on which BSc tab is currently active, else 'y3'
+            if (document.getElementById('year1').classList.contains('active')) return 'y1';
+            if (document.getElementById('year2').classList.contains('active')) return 'y2';
+            if (document.getElementById('year3').classList.contains('active')) return 'y3';
+            return 'y3';
+        }
+
+        function addModuleSmart() {
+            const mode = document.getElementById('degree-select').value;
+            if (mode === 'phd') { alert("PhD uses milestones, not modules. Use the Milestones tab."); return; }
+            const target = mode === 'msc' ? 'msc' : activeYearKey();
+            addModule(target);
+        }
+        function removeModuleSmart() {
+            const mode = document.getElementById('degree-select').value;
+            if (mode === 'phd') { alert("PhD uses milestones, not modules."); return; }
+            const target = mode === 'msc' ? 'msc' : activeYearKey();
+            removeModule(target);
+        }
+
+        function addModule(target) {
+            sfxAdd();
+            if (target === 'msc') { state.msc.grades.push(40); state.msc.names.push(`New Module`); createSliders('msc', 'none', 'msc-sliders'); }
+            else { state.bsc[target].grades.push(40); state.bsc[target].names.push(`New Module`); createSliders('bsc', target, `${target}-sliders`); }
+            calculateCurrentMode(); saveState();
+        }
+        function removeModule(target) {
+            if (target === 'msc') {
+                if (state.msc.grades.length > 1) { state.msc.grades.pop(); state.msc.names.pop(); createSliders('msc', 'none', 'msc-sliders'); sfxRemove(); }
+                else alert("Cannot remove all modules.");
+            } else {
+                if (state.bsc[target].grades.length > 1) { state.bsc[target].grades.pop(); state.bsc[target].names.pop(); createSliders('bsc', target, `${target}-sliders`); sfxRemove(); }
+                else alert("Cannot remove all modules.");
+            }
+            calculateCurrentMode(); saveState();
+        }
+
+        function resetAllTo40() {
+            sfxReset();
+            const mode = document.getElementById('degree-select').value;
+            if (mode === 'bsc') { ['y1', 'y2', 'y3'].forEach(year => { state.bsc[year].grades = state.bsc[year].grades.map(() => 40); createSliders('bsc', year, `${year}-sliders`); }); }
+            else if (mode === 'msc') { state.msc.grades = state.msc.grades.map(() => 40); createSliders('msc', 'none', 'msc-sliders'); }
+            else if (mode === 'phd') { state.phd.stages.forEach(s => s.done = false); createPhDCheckboxes(); }
+            calculateCurrentMode(); saveState();
+        }
+
+        function wipeEverything() {
+            if (!confirm("This will wipe ALL grades, names, and milestones across every degree mode. Continue?")) return;
+            sfxWipe();
+            localStorage.removeItem('academicForecasterStateV9');
+            state = JSON.parse(JSON.stringify(defaultState));
+            ['y1', 'y2', 'y3'].forEach(year => createSliders('bsc', year, `${year}-sliders`));
+            createSliders('msc', 'none', 'msc-sliders');
+            createPhDCheckboxes();
+            calculateCurrentMode();
+            saveState();
+        }
+
+        // --- Calculation Engines ---
+        function calculateCurrentMode() {
+            const mode = document.getElementById('degree-select').value;
+            if (mode === 'bsc') calculateBSc();
+            else if (mode === 'msc') calculateMSc();
+            else calculatePhD();
+        }
+
+        function calculateBSc() {
+            const getAvg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+            const final = Math.max(getAvg(state.bsc.y3.grades), (getAvg(state.bsc.y2.grades) * 0.3) + (getAvg(state.bsc.y3.grades) * 0.7));
+            document.getElementById('final-score-bsc').innerText = final.toFixed(2) + '%';
+            document.getElementById('method-used-bsc').innerText = final === getAvg(state.bsc.y3.grades) ? "Method 1 (100% Year 3)" : "Method 2 (30% Y2 + 70% Year 3)";
+            updateCardStyle(final, 'bsc', 70, 60, 50, ["FIRST-CLASS HONOURS", "UPPER SECOND (2:1)", "LOWER SECOND (2:2)", final >= 40 ? "THIRD-CLASS" : "FAIL"]);
+            renderForecastCat('bsc', final < 40);
+        }
+
+        function calculateMSc() {
+            const final = state.msc.grades.length ? state.msc.grades.reduce((a, b) => a + b, 0) / state.msc.grades.length : 0;
+            document.getElementById('final-score-msc').innerText = final.toFixed(2) + '%';
+            updateCardStyle(final, 'msc', 70, 60, 50, ["DISTINCTION", "MERIT", "PASS", "FAIL"]);
+            renderForecastCat('msc', final < 50);
+        }
+
+        function calculatePhD() {
+            const completed = state.phd.stages.filter(s => s.done).length;
+            const percentage = Math.round((completed / state.phd.stages.length) * 100);
+            document.getElementById('phd-progress-bar').style.width = percentage + '%';
+            document.getElementById('phd-percent-text').innerText = percentage;
+            updateCardStyle(percentage, 'phd', 100, 50, 0, ["DOCTORATE AWARDED", "WRITING UP", "RESEARCH PHASE", "RESEARCH PHASE"]);
+            renderForecastCat('phd', percentage === 0);
+        }
+
+        function updateCardStyle(score, mode, t1, t2, t3, texts) {
+            const card = document.getElementById(`result-card-${mode}`);
+            const clsText = document.getElementById(`classification-${mode}`);
+            const tgtText = document.getElementById(`target-metric-${mode === 'bsc' ? 'text-bsc' : (mode === 'msc' ? 'text-msc' : 'text-phd')}`);
+
+            card.classList.remove("grade-1st", "grade-21", "grade-22", "grade-other");
+
+            if (score >= t1) { clsText.innerText = texts[0]; card.classList.add("grade-1st"); tgtText.innerHTML = "> High Score Achieved. 🥇"; tgtText.style.color = "#8c6a5d"; }
+            else if (score >= t2) { clsText.innerText = texts[1]; card.classList.add("grade-21"); tgtText.innerHTML = "> Next tier unlocked. Keep grinding."; tgtText.style.color = "#5a4a42"; }
+            else if (score >= t3) { clsText.innerText = texts[2]; card.classList.add("grade-22"); tgtText.innerHTML = "> Requirements met. Push for more."; tgtText.style.color = "#5a4a42"; }
+            else { clsText.innerText = texts[3]; card.classList.add("grade-other"); tgtText.innerHTML = "> Insert coin to try again."; tgtText.style.color = "#e43b44"; }
+        }
+
+        // --- PIXEL CAT FACTORY ---
+        // Each cat is a tile-aligned SVG (24x24 viewBox) using crispEdges.
+        // The cat changes per degree mode; rainy cat is shown when the student is failing (no degree achieved).
+
+        function catBSc() {
+            // Graduate cat: pastel yellow body, black mortarboard, gold tassel
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Mortarboard top -->
+                <rect x="3" y="4" width="18" height="2" fill="#5a4a42"/>
+                <rect x="4" y="3" width="16" height="1" fill="#5a4a42"/>
+                <rect x="10" y="6" width="4" height="1" fill="#5a4a42"/>
+                <!-- Tassel -->
+                <g class="cat-tassel">
+                    <rect x="19" y="5" width="1" height="3" fill="#fcf6bd"/>
+                    <rect x="18" y="8" width="3" height="2" fill="#fcf6bd"/>
+                    <rect x="19" y="10" width="1" height="1" fill="#d4a373"/>
+                </g>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="7" width="2" height="2" fill="#fcf6bd"/></g>
+                <g class="cat-ear" style="animation-delay:1s"><rect x="14" y="7" width="2" height="2" fill="#fcf6bd"/></g>
+                <rect x="7" y="8" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="8" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="8" width="10" height="6" fill="#fcf6bd"/>
+                <rect x="5" y="9" width="1" height="4" fill="#fcf6bd"/>
+                <rect x="16" y="9" width="1" height="4" fill="#fcf6bd"/>
+                <!-- Cheeks -->
+                <rect x="6" y="12" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="15" y="12" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Eyes -->
+                <rect x="8" y="10" width="2" height="2" fill="#5a4a42"/>
+                <rect x="12" y="10" width="2" height="2" fill="#5a4a42"/>
+                <rect x="9" y="10" width="1" height="1" fill="#ffffff"/>
+                <rect x="13" y="10" width="1" height="1" fill="#ffffff"/>
+                <!-- Nose + mouth -->
+                <rect x="11" y="12" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="13" width="1" height="1" fill="#5a4a42"/>
+                <rect x="12" y="13" width="1" height="1" fill="#5a4a42"/>
+                <!-- Body -->
+                <rect x="7" y="14" width="8" height="5" fill="#fcf6bd"/>
+                <rect x="6" y="15" width="1" height="3" fill="#fcf6bd"/>
+                <rect x="15" y="15" width="1" height="3" fill="#fcf6bd"/>
+                <!-- Diploma (rolled scroll) in paws -->
+                <g class="cat-scroll">
+                    <rect x="8" y="16" width="6" height="2" fill="#fffcf2"/>
+                    <rect x="8" y="16" width="1" height="2" fill="#d4a373"/>
+                    <rect x="13" y="16" width="1" height="2" fill="#d4a373"/>
+                    <rect x="10" y="17" width="2" height="1" fill="#ffb5a7"/>
+                </g>
+                <!-- Feet -->
+                <rect x="7" y="19" width="2" height="1" fill="#5a4a42"/>
+                <rect x="13" y="19" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="15" width="1" height="3" fill="#fcf6bd"/>
+                    <rect x="17" y="14" width="1" height="2" fill="#fcf6bd"/>
+                    <rect x="18" y="13" width="1" height="2" fill="#fcf6bd"/>
+                </g>
+            </svg>`;
+        }
+
+        function catMSc() {
+            // Scholar cat: pastel blue, holds an open book, half-tam
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Floppy tam -->
+                <rect x="5" y="5" width="14" height="2" fill="#5a4a42"/>
+                <rect x="6" y="4" width="12" height="1" fill="#5a4a42"/>
+                <rect x="9" y="3" width="6" height="1" fill="#5a4a42"/>
+                <rect x="11" y="7" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tassel -->
+                <g class="cat-tassel">
+                    <rect x="17" y="6" width="1" height="3" fill="#a2d2ff"/>
+                    <rect x="16" y="9" width="3" height="2" fill="#a2d2ff"/>
+                </g>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="8" width="2" height="2" fill="#a2d2ff"/></g>
+                <g class="cat-ear" style="animation-delay:1.2s"><rect x="14" y="8" width="2" height="2" fill="#a2d2ff"/></g>
+                <rect x="7" y="9" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="9" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="9" width="10" height="6" fill="#a2d2ff"/>
+                <rect x="5" y="10" width="1" height="4" fill="#a2d2ff"/>
+                <rect x="16" y="10" width="1" height="4" fill="#a2d2ff"/>
+                <!-- Glasses -->
+                <rect x="8" y="11" width="3" height="1" fill="#5a4a42"/>
+                <rect x="11" y="11" width="1" height="1" fill="#5a4a42"/>
+                <rect x="12" y="11" width="3" height="1" fill="#5a4a42"/>
+                <rect x="8" y="12" width="1" height="1" fill="#5a4a42"/>
+                <rect x="10" y="12" width="1" height="1" fill="#5a4a42"/>
+                <rect x="12" y="12" width="1" height="1" fill="#5a4a42"/>
+                <rect x="14" y="12" width="1" height="1" fill="#5a4a42"/>
+                <rect x="8" y="13" width="3" height="1" fill="#5a4a42"/>
+                <rect x="12" y="13" width="3" height="1" fill="#5a4a42"/>
+                <!-- Eyes behind glasses -->
+                <rect x="9" y="12" width="1" height="1" fill="#ffffff"/>
+                <rect x="13" y="12" width="1" height="1" fill="#ffffff"/>
+                <!-- Nose + mouth -->
+                <rect x="11" y="13" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="14" width="1" height="1" fill="#5a4a42"/>
+                <rect x="12" y="14" width="1" height="1" fill="#5a4a42"/>
+                <!-- Body -->
+                <rect x="7" y="15" width="8" height="5" fill="#a2d2ff"/>
+                <rect x="6" y="16" width="1" height="3" fill="#a2d2ff"/>
+                <rect x="15" y="16" width="1" height="3" fill="#a2d2ff"/>
+                <!-- Open book -->
+                <g class="cat-scroll">
+                    <rect x="7" y="17" width="8" height="2" fill="#fffcf2"/>
+                    <rect x="11" y="17" width="0.5" height="2" fill="#5a4a42"/>
+                    <rect x="8" y="17" width="2" height="1" fill="#d8e2dc"/>
+                    <rect x="12" y="17" width="2" height="1" fill="#d8e2dc"/>
+                </g>
+                <!-- Feet -->
+                <rect x="7" y="20" width="2" height="1" fill="#5a4a42"/>
+                <rect x="13" y="20" width="2" height="1" fill="#5a4a42"/>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="16" width="1" height="3" fill="#a2d2ff"/>
+                    <rect x="17" y="15" width="1" height="2" fill="#a2d2ff"/>
+                    <rect x="18" y="14" width="1" height="2" fill="#a2d2ff"/>
+                </g>
+            </svg>`;
+        }
+
+        function catPhD() {
+            // Doctor cat: pastel pink, 4-corner doctoral tam with two tassels, thesis stack
+            return `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-40 sm:w-48 sm:h-48 drop-shadow-md forecast-cat-wrap">
+                <!-- Doctoral tam -->
+                <rect x="3" y="5" width="18" height="2" fill="#5a4a42"/>
+                <rect x="4" y="4" width="16" height="1" fill="#5a4a42"/>
+                <rect x="3" y="3" width="2" height="1" fill="#5a4a42"/>
+                <rect x="11" y="3" width="2" height="1" fill="#5a4a42"/>
+                <rect x="19" y="3" width="2" height="1" fill="#5a4a42"/>
+                <rect x="11" y="7" width="2" height="1" fill="#5a4a42"/>
+                <!-- Two tassels -->
+                <g class="cat-tassel">
+                    <rect x="19" y="6" width="1" height="3" fill="#fcf6bd"/>
+                    <rect x="18" y="9" width="3" height="2" fill="#fcf6bd"/>
+                </g>
+                <g class="cat-tassel" style="animation-delay:0.5s">
+                    <rect x="4" y="6" width="1" height="3" fill="#ffb5a7"/>
+                    <rect x="3" y="9" width="3" height="2" fill="#ffb5a7"/>
+                </g>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="8" width="2" height="2" fill="#ffcbf2"/></g>
+                <g class="cat-ear" style="animation-delay:0.8s"><rect x="14" y="8" width="2" height="2" fill="#ffcbf2"/></g>
+                <rect x="7" y="9" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="14" y="9" width="1" height="1" fill="#ffb5a7"/>
+                <!-- Head -->
+                <rect x="6" y="9" width="10" height="6" fill="#ffcbf2"/>
+                <rect x="5" y="10" width="1" height="4" fill="#ffcbf2"/>
+                <rect x="16" y="10" width="1" height="4" fill="#ffcbf2"/>
+                <!-- Round glasses -->
+                <rect x="7" y="11" width="3" height="3" fill="#5a4a42"/>
+                <rect x="8" y="12" width="1" height="1" fill="#ffffff"/>
+                <rect x="12" y="11" width="3" height="3" fill="#5a4a42"/>
+                <rect x="13" y="12" width="1" height="1" fill="#ffffff"/>
+                <rect x="8" y="12" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="13" y="12" width="1" height="1" fill="#fcf6bd"/>
+                <rect x="10" y="12" width="2" height="1" fill="#5a4a42"/>
+                <!-- Nose + mouth -->
+                <rect x="11" y="13" width="1" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="14" width="1" height="1" fill="#5a4a42"/>
+                <rect x="12" y="14" width="1" height="1" fill="#5a4a42"/>
+                <!-- Body -->
+                <rect x="7" y="15" width="8" height="4" fill="#ffcbf2"/>
+                <rect x="6" y="16" width="1" height="2" fill="#ffcbf2"/>
+                <rect x="15" y="16" width="1" height="2" fill="#ffcbf2"/>
+                <!-- Thesis stack (3 books) -->
+                <g class="cat-scroll">
+                    <rect x="7" y="19" width="9" height="1" fill="#a2d2ff"/>
+                    <rect x="7" y="20" width="9" height="1" fill="#b5e48c"/>
+                    <rect x="7" y="21" width="9" height="1" fill="#ffb5a7"/>
+                    <rect x="8" y="19" width="1" height="3" fill="#5a4a42"/>
+                    <rect x="14" y="19" width="1" height="3" fill="#5a4a42"/>
+                </g>
+                <!-- Tail -->
+                <g class="cat-tail">
+                    <rect x="16" y="16" width="1" height="3" fill="#ffcbf2"/>
+                    <rect x="17" y="15" width="1" height="2" fill="#ffcbf2"/>
+                    <rect x="18" y="14" width="1" height="2" fill="#ffcbf2"/>
+                </g>
+            </svg>`;
+        }
+
+        function catRainy() {
+            // Sad cat in the rain — umbrella overhead, falling drops, lightning flash
+            return `
+            <svg viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" class="w-40 h-48 sm:w-48 sm:h-56 drop-shadow-md forecast-cat-wrap">
+                <!-- Lightning flash background -->
+                <rect x="0" y="0" width="24" height="28" fill="#fcf6bd" class="lightning" opacity="0"/>
+                <!-- Rain drops -->
+                <rect x="3" y="6" width="1" height="2" fill="#a2d2ff" class="rain-drop"/>
+                <rect x="8" y="6" width="1" height="2" fill="#a2d2ff" class="rain-drop-2"/>
+                <rect x="15" y="6" width="1" height="2" fill="#a2d2ff" class="rain-drop-3"/>
+                <rect x="20" y="6" width="1" height="2" fill="#a2d2ff" class="rain-drop-4"/>
+                <rect x="11" y="4" width="1" height="2" fill="#a2d2ff" class="rain-drop-5"/>
+                <!-- Umbrella canopy -->
+                <rect x="3" y="6" width="18" height="1" fill="#5a4a42"/>
+                <rect x="4" y="5" width="16" height="1" fill="#ffb5a7"/>
+                <rect x="5" y="4" width="14" height="1" fill="#ffb5a7"/>
+                <rect x="6" y="3" width="12" height="1" fill="#ffb5a7"/>
+                <rect x="8" y="2" width="8" height="1" fill="#ffb5a7"/>
+                <rect x="10" y="1" width="4" height="1" fill="#ffb5a7"/>
+                <!-- Umbrella panel highlights -->
+                <rect x="7" y="5" width="3" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="5" width="3" height="1" fill="#ffcbf2"/>
+                <rect x="9" y="3" width="2" height="1" fill="#ffcbf2"/>
+                <rect x="13" y="3" width="2" height="1" fill="#ffcbf2"/>
+                <!-- Umbrella stick -->
+                <rect x="11" y="7" width="1" height="6" fill="#5a4a42"/>
+                <rect x="10" y="13" width="3" height="1" fill="#5a4a42"/>
+                <!-- Ears -->
+                <g class="cat-ear"><rect x="6" y="11" width="2" height="2" fill="#e5e5e5"/></g>
+                <g class="cat-ear" style="animation-delay:1.5s"><rect x="14" y="11" width="2" height="2" fill="#e5e5e5"/></g>
+                <rect x="7" y="12" width="1" height="1" fill="#ffcbf2"/>
+                <rect x="14" y="12" width="1" height="1" fill="#ffcbf2"/>
+                <!-- Head -->
+                <rect x="6" y="12" width="10" height="6" fill="#e5e5e5"/>
+                <rect x="5" y="13" width="1" height="4" fill="#e5e5e5"/>
+                <rect x="16" y="13" width="1" height="4" fill="#e5e5e5"/>
+                <!-- Sad eyes (closed lines + tear) -->
+                <rect x="8" y="14" width="2" height="1" fill="#5a4a42"/>
+                <rect x="12" y="14" width="2" height="1" fill="#5a4a42"/>
+                <rect x="8" y="15" width="1" height="1" fill="#a2d2ff"/>
+                <!-- Frown -->
+                <rect x="10" y="17" width="3" height="1" fill="#5a4a42"/>
+                <rect x="9" y="16" width="1" height="1" fill="#5a4a42"/>
+                <rect x="13" y="16" width="1" height="1" fill="#5a4a42"/>
+                <!-- Nose -->
+                <rect x="11" y="16" width="1" height="1" fill="#ffb5a7"/>
+                <!-- Body -->
+                <rect x="7" y="18" width="8" height="4" fill="#e5e5e5"/>
+                <rect x="6" y="19" width="1" height="2" fill="#e5e5e5"/>
+                <rect x="15" y="19" width="1" height="2" fill="#e5e5e5"/>
+                <!-- Feet -->
+                <rect x="7" y="22" width="2" height="1" fill="#5a4a42"/>
+                <rect x="13" y="22" width="2" height="1" fill="#5a4a42"/>
+                <!-- Puddle -->
+                <rect x="4" y="24" width="16" height="1" fill="#a2d2ff"/>
+                <rect x="6" y="25" width="12" height="1" fill="#b4d4e1"/>
+                <!-- Tail (drooping) -->
+                <g class="cat-tail">
+                    <rect x="16" y="20" width="1" height="2" fill="#e5e5e5"/>
+                    <rect x="17" y="21" width="1" height="2" fill="#e5e5e5"/>
+                    <rect x="18" y="22" width="1" height="2" fill="#e5e5e5"/>
+                </g>
+            </svg>`;
+        }
+
+        function renderForecastCat(mode, isFailing) {
+            const targetId = `forecast-cat-${mode}`;
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            let svg;
+            if (isFailing) svg = catRainy();
+            else if (mode === 'bsc') svg = catBSc();
+            else if (mode === 'msc') svg = catMSc();
+            else if (mode === 'phd') svg = catPhD();
+            else svg = catRainy();
+            target.innerHTML = svg;
+        }
+
+        function changeDegreeLevel(forcedMode) {
+            const mode = forcedMode || document.getElementById('degree-select').value;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.add('hidden-group'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden-group', 'active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Re-show the universal control bar buttons (they're outside tab system but use tab-btn class)
+            document.querySelectorAll('#control-bar .tab-btn').forEach(btn => btn.classList.remove('hidden-group'));
+
+            document.querySelectorAll(`.${mode}-tab`).forEach(btn => btn.classList.remove('hidden-group'));
+            document.querySelectorAll(`.${mode}-content`).forEach(btn => btn.classList.remove('hidden-group'));
+
+            // Toggle add/remove visibility for PhD (no modules)
+            const addBtn = document.getElementById('btn-add-universal');
+            const removeBtn = document.getElementById('btn-remove-universal');
+            if (mode === 'phd') { addBtn.classList.add('hidden-group'); removeBtn.classList.add('hidden-group'); }
+            else { addBtn.classList.remove('hidden-group'); removeBtn.classList.remove('hidden-group'); }
+
+            switchTab(`results-${mode}`);
+        }
+
+        function switchTab(tabId) {
+            sfxClick();
+            const mode = document.getElementById('degree-select').value;
+            document.querySelectorAll(`.${mode}-tab`).forEach(el => el.classList.remove('active-tab'));
+            document.querySelectorAll(`.${mode}-content`).forEach(el => el.classList.remove('active'));
+
+            if(document.getElementById(`btn-${tabId}`)) document.getElementById(`btn-${tabId}`).classList.add('active-tab');
+            if(document.getElementById(tabId)) document.getElementById(tabId).classList.add('active');
+
+            calculateCurrentMode();
+
+            if (tabId.includes('results')) {
+                let isWin = false;
+                if(mode === 'bsc' && parseFloat(document.getElementById('final-score-bsc').innerText) >= 70) isWin = true;
+                if(mode === 'msc' && parseFloat(document.getElementById('final-score-msc').innerText) >= 70) isWin = true;
+                if(mode === 'phd' && parseInt(document.getElementById('phd-percent-text').innerText) === 100) isWin = true;
+
+                if (isWin) {
+                    sfxWin();
+                    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#ffb5a7', '#ffcbf2', '#a2d2ff', '#b5e48c', '#fcf6bd'] });
+                }
+            }
+        }
+
+        // Re-bind degree-select to re-mount tabs when changed before starting
+        document.getElementById('degree-select').addEventListener('change', () => {
+            // Only matters after the user has entered the app screen; harmless on setup screen
+            if (document.getElementById('screen-app').classList.contains('active-screen')) {
+                changeDegreeLevel();
+            }
+        });
+
+        // Initialize App UI and load from localStorage
+        createSliders('bsc', 'y1', 'y1-sliders'); createSliders('bsc', 'y2', 'y2-sliders'); createSliders('bsc', 'y3', 'y3-sliders');
+        createSliders('msc', 'none', 'msc-sliders'); createPhDCheckboxes();
+        // Pre-render cats so they exist on first paint
+        renderForecastCat('bsc', false);
+        renderForecastCat('msc', false);
+        renderForecastCat('phd', false);
+    </script>
+</body>
+</html>

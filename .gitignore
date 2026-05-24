@@ -1,0 +1,23 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local server / build noise (none expected for this project, but pre-empting)
+node_modules/
+dist/
+build/
+.cache/
+*.log
+
+# Local secrets — never commit
+.env
+.env.*
+!.env.example
